@@ -5,8 +5,16 @@ import (
 	"testing"
 )
 
+func TestCreateGrender(t *testing.T) {
+	r := New(OptionMissingKeyZero(true))
+	if r.missingKeyZero != true {
+		t.Logf(">> missingkey should be true")
+		t.Fail()
+	}
+}
+
 func TestAddTemplates(t *testing.T) {
-	r := NewGrender()
+	r := New()
 	if err := r.Add("P1", `page`); err != nil {
 		t.Logf(">> failed to add template P1: %v", err)
 		t.FailNow()
@@ -29,7 +37,7 @@ func TestAddTemplates(t *testing.T) {
 }
 
 func TestInvalidTemplate(t *testing.T) {
-	r := NewGrender()
+	r := New()
 	if err := r.Add("P1", `{{ .Name`); err == nil {
 		t.Logf(">> not triggering errors when input is invalid")
 		t.Fail()
@@ -42,7 +50,7 @@ func TestInvalidTemplate(t *testing.T) {
 }
 
 func TestNoTemplates(t *testing.T) {
-	r := NewGrender()
+	r := New()
 	if _, err := r.Render("", "", nil); err == nil {
 		t.Logf(">> no page name, should fail")
 		t.Fail()
@@ -60,7 +68,7 @@ func TestNoTemplates(t *testing.T) {
 }
 
 func TestNoShare(t *testing.T) {
-	r := NewGrender()
+	r := New()
 	r.Add("P1", `{{ share "S1" }}`)
 
 	// panic in custom functions would be transformed into errors
@@ -86,7 +94,7 @@ func TestNoShare(t *testing.T) {
 }
 
 func TestCurrent(t *testing.T) {
-	r := NewGrender()
+	r := New()
 	r.AddLayout("L1", `This is layout {{ current }}: {{ yield }}`)
 	r.Add("P1", `This is page {{ current }}`)
 
@@ -102,7 +110,7 @@ func TestCurrent(t *testing.T) {
 }
 
 func TestNoYield(t *testing.T) {
-	r := NewGrender()
+	r := New()
 	r.AddLayout("L1", `No yield`)
 	r.Add("P1", `hello`)
 
@@ -118,7 +126,7 @@ func TestNoYield(t *testing.T) {
 }
 
 func TestRenderWithData(t *testing.T) {
-	r := NewGrender()
+	r := New()
 
 	r.AddLayout("L1", `NoValue: {{.Subtitle}} Page: {{ yield }}`)
 	r.Add("P1", `DownCase: {{.name}} UpperCase: {{.Age}} Object: {{.obj.p1}} ObjectNotExists: {{.obj.notExists}}`)
@@ -143,7 +151,7 @@ func TestRenderWithData(t *testing.T) {
 }
 
 func TestShared(t *testing.T) {
-	r := NewGrender()
+	r := New()
 
 	r.AddLayout("L1", `Layout {{ share "S1" }} => {{ yield }}`)
 	r.Add("S1", `Shared Content {{.name}}`)

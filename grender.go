@@ -7,20 +7,28 @@ import (
 	"text/template"
 )
 
+// Grender is the object to handle the rendering work.
 type Grender struct {
 	sync.RWMutex
-	m map[string]*template.Template
+	m              map[string]*template.Template
+	missingKeyZero bool
 }
 
-func NewGrender() *Grender {
-	return &Grender{
+// New creates one Grender object.
+func New(opts ...Option) *Grender {
+	r := &Grender{
 		m: make(map[string]*template.Template),
 	}
+	for _, opt := range opts {
+		opt(r)
+	}
+	return r
 }
 
-func (Grender *Grender) AddLayout(name, content string) error {
+// AddLayout adds a layout template.
+func (r *Grender) AddLayout(name, content string) error {
 	key := "layout:" + name
-	t, err := template.New(key).Option("missingkey=zero").Funcs(template.FuncMap{
+	t := template.New(key).Funcs(template.FuncMap{
 		"yield": func() string {
 			return "{{.}}"
 		},
@@ -30,57 +38,68 @@ func (Grender *Grender) AddLayout(name, content string) error {
 		"share": func(sharedTempleteName string) string {
 			return fmt.Sprintf("{{ share \"%s\" }}", sharedTempleteName)
 		},
-	}).Parse(content)
+	})
 
+	if r.missingKeyZero {
+		t.Option("missingkey=zero")
+	}
+
+	_, err := t.Parse(content)
 	if err != nil {
 		return err
 	}
 
-	Grender.Lock()
-	defer Grender.Unlock()
+	r.Lock()
+	defer r.Unlock()
 
-	if _, ok := Grender.m[key]; ok {
+	if _, ok := r.m[key]; ok {
 		return fmt.Errorf("template %s already exists", name)
 	}
 
-	Grender.m[key] = t
+	r.m[key] = t
 	return nil
 }
 
-func (Grender *Grender) Add(name, content string) error {
+// Add adds a page template.
+func (r *Grender) Add(name, content string) error {
 	key := "page:" + name
-	t, err := template.New(key).Option("missingkey=zero").Funcs(template.FuncMap{
+	t := template.New(key).Option("missingkey=zero").Funcs(template.FuncMap{
 		"current": func() string {
 			return name
 		},
 		"share": func(sharedTempleteName string) string {
 			return fmt.Sprintf("{{ share \"%s\" }}", sharedTempleteName)
 		},
-	}).Parse(content)
+	})
 
+	if r.missingKeyZero {
+		t.Option("missingkey=zero")
+	}
+
+	_, err := t.Parse(content)
 	if err != nil {
 		return err
 	}
 
-	Grender.Lock()
-	defer Grender.Unlock()
+	r.Lock()
+	defer r.Unlock()
 
-	if _, ok := Grender.m[key]; ok {
+	if _, ok := r.m[key]; ok {
 		return fmt.Errorf("template %s already exists", name)
 	}
 
-	Grender.m[key] = t
+	r.m[key] = t
 	return nil
 }
 
-func (Grender *Grender) GetLayout(name string) *template.Template {
-	Grender.RLock()
-	defer Grender.RUnlock()
-	return Grender.m["layout:"+name]
+func (r *Grender) getLayout(name string) *template.Template {
+	r.RLock()
+	defer r.RUnlock()
+	return r.m["layout:"+name]
 }
 
-func (Grender *Grender) Get(name string) *template.Template {
-	Grender.RLock()
-	defer Grender.RUnlock()
-	return Grender.m["page:"+name]
+func (r *Grender) get(name string) *template.Template {
+	r.RLock()
+	defer r.RUnlock()
+	return r.m["page:"+name]
 }

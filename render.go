@@ -6,6 +6,7 @@ import (
 	"text/template"
 )
 
+// Render renders with given layout and page template names, as well as data.
 func (r *Grender) Render(layoutName, pageName string, data interface{}) (string, error) {
 	if layoutName == "" {
 		return r.renderWithoutLayout(pageName, data)
@@ -15,7 +16,7 @@ func (r *Grender) Render(layoutName, pageName string, data interface{}) (string,
 
 func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}) (string, error) {
 	var b1 bytes.Buffer
-	layout := r.GetLayout(layoutName)
+	layout := r.getLayout(layoutName)
 	if layout == nil {
 		return "", fmt.Errorf("no template %s", layoutName)
 	}
@@ -31,7 +32,7 @@ func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}
 
 	outTmpl, err := template.New("output-template").Funcs(template.FuncMap{
 		"share": func(sharedTempleteName string) string {
-			shared := r.Get(sharedTempleteName)
+			shared := r.get(sharedTempleteName)
 			if shared == nil {
 				panic(fmt.Errorf("no shared template %s", sharedTempleteName))
 			}
@@ -58,7 +59,7 @@ func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}
 
 func (r *Grender) renderWithoutLayout(pageName string, data interface{}) (string, error) {
 	var b bytes.Buffer
-	pt := r.Get(pageName)
+	pt := r.get(pageName)
 	if pt == nil {
 		return "", fmt.Errorf("no template %s", pageName)
 	}
@@ -72,7 +73,7 @@ func (r *Grender) renderWithoutLayout(pageName string, data interface{}) (string
 
 	temp, err := template.New("temp-template").Funcs(template.FuncMap{
 		"share": func(sharedTempleteName string) string {
-			shared := r.Get(sharedTempleteName)
+			shared := r.get(sharedTempleteName)
 			if shared == nil {
 				panic(fmt.Errorf("no shared template %s", sharedTempleteName))
 			}
