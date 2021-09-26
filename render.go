@@ -16,7 +16,7 @@ func (r *Grender) Render(layoutName, pageName string, data interface{}) (string,
 
 func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}) (string, error) {
 	var b1 bytes.Buffer
-	layout := r.getLayout(layoutName)
+	layout := r.get(layoutName, true)
 	if layout == nil {
 		return "", fmt.Errorf("no template %s", layoutName)
 	}
@@ -32,17 +32,7 @@ func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}
 
 	outTmpl, err := template.New("output-template").Funcs(template.FuncMap{
 		"share": func(sharedTempleteName string) string {
-			shared := r.get(sharedTempleteName)
-			if shared == nil {
-				panic(fmt.Errorf("no shared template %s", sharedTempleteName))
-			}
-
-			var b bytes.Buffer
-			if err := shared.Execute(&b, data); err != nil {
-				panic(err)
-			}
-
-			return string(b.Bytes())
+			return r.renderSharedWithData(sharedTempleteName, data)
 		},
 	}).Parse(layoutContent)
 	if err != nil {
@@ -59,7 +49,7 @@ func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}
 
 func (r *Grender) renderWithoutLayout(pageName string, data interface{}) (string, error) {
 	var b bytes.Buffer
-	pt := r.get(pageName)
+	pt := r.get(pageName, false)
 	if pt == nil {
 		return "", fmt.Errorf("no template %s", pageName)
 	}
@@ -73,17 +63,7 @@ func (r *Grender) renderWithoutLayout(pageName string, data interface{}) (string
 
 	temp, err := template.New("temp-template").Funcs(template.FuncMap{
 		"share": func(sharedTempleteName string) string {
-			shared := r.get(sharedTempleteName)
-			if shared == nil {
-				panic(fmt.Errorf("no shared template %s", sharedTempleteName))
-			}
-
-			var b bytes.Buffer
-			if err := shared.Execute(&b, data); err != nil {
-				panic(err)
-			}
-
-			return string(b.Bytes())
+			return r.renderSharedWithData(sharedTempleteName, data)
 		},
 	}).Parse(content)
 	if err != nil {
@@ -95,4 +75,17 @@ func (r *Grender) renderWithoutLayout(pageName string, data interface{}) (string
 		return "", err
 	}
 	return string(bt.Bytes()), nil
+}
+
+func (r *Grender) renderSharedWithData(sharedTemplateName string, data interface{}) string {
+	shared := r.get(sharedTemplateName, false)
+	if shared == nil {
+		panic(fmt.Errorf("no shared template %s", sharedTemplateName))
+	}
+
+	var b bytes.Buffer
+	if err := shared.Execute(&b, data); err != nil {
+		panic(err)
+	}
+	return string(b.Bytes())
 }

@@ -1,14 +1,82 @@
 package grender
 
 import (
+	"embed"
 	"strings"
 	"testing"
 )
+
+//go:embed fixtures/*
+var testFS embed.FS
 
 func TestCreateGrender(t *testing.T) {
 	r := New(OptionMissingKeyZero(true))
 	if r.missingKeyZero != true {
 		t.Logf(">> missingkey should be true")
+		t.Fail()
+	}
+}
+
+func TestLoadFromFS(t *testing.T) {
+	r := New(
+		OptionTemplateDir("fixtures"),
+		OptionLayoutDir("fixtures/layouts"),
+	)
+
+	if err := r.LoadFromFS(testFS); err != nil {
+		t.Logf("failed to load templates from filesystem: %v", err)
+		t.FailNow()
+	}
+
+	if r.get("hehe", false) == nil {
+		t.Logf("hehe.tmpl not loaded")
+		t.Fail()
+	}
+
+	res, err := r.Render("haha", "hehe", nil)
+	if err != nil {
+		t.Logf("failed to render: %v", err)
+		t.FailNow()
+	}
+
+	// test fixtures may contain blank line or spaces due to IDE configuration.
+	if strings.TrimSpace(res) != "haha hehe" {
+		t.Logf("> actual: %v", res)
+		t.Fail()
+	}
+}
+
+func TestNotLoadByExt(t *testing.T) {
+	r := New(
+		OptionLayoutDir("fixtures/layouts"),
+		OptionTemplateDir("fixtures"),
+	)
+
+	if err := r.LoadFromFS(testFS); err != nil {
+		t.Logf("failed to load templates from filesystem: %v", err)
+		t.FailNow()
+	}
+
+	if r.get("not_a_tmpl", false) != nil {
+		t.Logf("not_a_tmpl should not be loaded")
+		t.Fail()
+	}
+}
+
+func TestLoadByExt(t *testing.T) {
+	r := New(
+		OptionLayoutDir("fixtures/layouts"),
+		OptionTemplateDir("fixtures"),
+		OptionTemplateExt([]string{"no"}),
+	)
+
+	if err := r.LoadFromFS(testFS); err != nil {
+		t.Logf("failed to load templates from filesystem: %v", err)
+		t.FailNow()
+	}
+
+	if r.get("not_a_tmpl", false) == nil {
+		t.Logf("not_a_tmpl should be loaded")
 		t.Fail()
 	}
 }
@@ -126,7 +194,7 @@ func TestNoYield(t *testing.T) {
 }
 
 func TestRenderWithData(t *testing.T) {
-	r := New()
+	r := New(OptionMissingKeyZero(true))
 
 	r.AddLayout("L1", `NoValue: {{.Subtitle}} Page: {{ yield }}`)
 	r.Add("P1", `DownCase: {{.name}} UpperCase: {{.Age}} Object: {{.obj.p1}} ObjectNotExists: {{.obj.notExists}}`)
