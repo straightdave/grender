@@ -72,8 +72,8 @@ err := r.LoadFromFS(yourFS)
 import grender
 r := grender.New(
     OptionMissingKeyZero(false),
-    OptionTemplateDir("fixtures"),
-    OptionLayoutDir("fixtures/layouts"),
+    OptionTemplateDir("templates"),
+    OptionLayoutDir("templates/layouts"),
     OptionTemplateExt([]string{".tmpl", ".html"}),
 )
 // all values above are default.

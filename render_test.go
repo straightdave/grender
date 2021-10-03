@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-//go:embed fixtures/*
+//go:embed templates/*
 var testFS embed.FS
 
 func TestCreateGrender(t *testing.T) {
@@ -19,8 +19,8 @@ func TestCreateGrender(t *testing.T) {
 
 func TestLoadFromFS(t *testing.T) {
 	r := New(
-		OptionTemplateDir("fixtures"),
-		OptionLayoutDir("fixtures/layouts"),
+		OptionTemplateDir("templates"),
+		OptionLayoutDir("templates/layouts"),
 	)
 
 	if err := r.LoadFromFS(testFS); err != nil {
@@ -48,8 +48,8 @@ func TestLoadFromFS(t *testing.T) {
 
 func TestNotLoadByExt(t *testing.T) {
 	r := New(
-		OptionLayoutDir("fixtures/layouts"),
-		OptionTemplateDir("fixtures"),
+		OptionLayoutDir("templates/layouts"),
+		OptionTemplateDir("templates"),
 	)
 
 	if err := r.LoadFromFS(testFS); err != nil {
@@ -65,8 +65,8 @@ func TestNotLoadByExt(t *testing.T) {
 
 func TestLoadByExt(t *testing.T) {
 	r := New(
-		OptionLayoutDir("fixtures/layouts"),
-		OptionTemplateDir("fixtures"),
+		OptionLayoutDir("templates/layouts"),
+		OptionTemplateDir("templates"),
 		OptionTemplateExt([]string{"no"}),
 	)
 
