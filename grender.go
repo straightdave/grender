@@ -14,8 +14,8 @@ import (
 type Grender struct {
 	lock           sync.RWMutex
 	m              map[string]*template.Template
-	missingKeyZero bool
 	ext            map[string]int
+	missingKeyZero bool
 	templateDir    string
 	layoutDir      string
 }

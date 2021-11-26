@@ -40,7 +40,7 @@ func TestLoadFromFS(t *testing.T) {
 	}
 
 	// test fixtures may contain blank line or spaces due to IDE configuration.
-	if strings.TrimSpace(res) != "haha hehe" {
+	if strings.TrimSpace(res.String()) != "haha hehe" {
 		t.Logf("> actual: %v", res)
 		t.Fail()
 	}
@@ -171,7 +171,7 @@ func TestCurrent(t *testing.T) {
 		t.Fatalf(">> failed to render: %v", err)
 	}
 
-	if out != "This is layout L1: This is page P1" {
+	if out.String() != "This is layout L1: This is page P1" {
 		t.Logf(">> actual: %s", out)
 		t.Fail()
 	}
@@ -187,7 +187,7 @@ func TestNoYield(t *testing.T) {
 		t.Fatalf(">> failed to render: %v", err)
 	}
 
-	if out != "No yield" {
+	if out.String() != "No yield" {
 		t.Logf(">> actual: %s", out)
 		t.Fail()
 	}
@@ -212,7 +212,7 @@ func TestRenderWithData(t *testing.T) {
 		t.Fatalf(">> failed to render: %v", err)
 	}
 
-	if out != "NoValue: <no value> Page: DownCase: mike UpperCase: 18 Object: 1 ObjectNotExists: 0" {
+	if out.String() != "NoValue: <no value> Page: DownCase: mike UpperCase: 18 Object: 1 ObjectNotExists: 0" {
 		t.Logf(">> actual: %s", out)
 		t.Fail()
 	}
@@ -233,7 +233,7 @@ func TestShared(t *testing.T) {
 		t.Fatalf(">>failed to render: %v", err)
 	}
 
-	if out != "Layout Shared Content dave => Shared Content dave => dave" {
+	if out.String() != "Layout Shared Content dave => Shared Content dave => dave" {
 		t.Logf(">> actual: %s", out)
 		t.Fail()
 	}

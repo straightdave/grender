@@ -6,78 +6,91 @@ import (
 	"text/template"
 )
 
+// Result is the result of rendering, actually a byte slice.
+type Result []byte
+
+// String converts Result into a byte slice.
+func (r Result) Bytes() []byte {
+	return r
+}
+
+// String converts Result into a String.
+func (r Result) String() string {
+	return string(r)
+}
+
 // Render renders with given layout and page template names, as well as data.
-func (r *Grender) Render(layoutName, pageName string, data interface{}) (string, error) {
+func (r *Grender) Render(layoutName, pageName string, data interface{}) (Result, error) {
 	if layoutName == "" {
 		return r.renderWithoutLayout(pageName, data)
 	}
 	return r.renderWithLayout(layoutName, pageName, data)
 }
 
-func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}) (string, error) {
+func (r *Grender) renderWithLayout(layoutName, pageName string, data interface{}) (Result, error) {
 	var b1 bytes.Buffer
 	layout := r.get(layoutName, true)
 	if layout == nil {
-		return "", fmt.Errorf("no template %s", layoutName)
+		return b1.Bytes(), fmt.Errorf("no template %s", layoutName)
 	}
 	if err := layout.Execute(&b1, data); err != nil {
-		return "", err
+		return b1.Bytes(), err
 	}
-	layoutContent := string(b1.Bytes())
+	layoutContent := b1.String()
 
 	pageContent, err := r.renderWithoutLayout(pageName, data)
 	if err != nil {
-		return "", err
+		return b1.Bytes(), err
 	}
 
 	outTmpl, err := template.New("output-template").Funcs(template.FuncMap{
 		"share": func(sharedTempleteName string) string {
-			return r.renderSharedWithData(sharedTempleteName, data)
+			return r.renderShared(sharedTempleteName, data).String()
 		},
 	}).Parse(layoutContent)
 	if err != nil {
-		return "", err
+		return b1.Bytes(), err
 	}
 
 	var b3 bytes.Buffer
 	if err := outTmpl.Execute(&b3, pageContent); err != nil {
-		return "", err
+		return b3.Bytes(), err
 	}
 
-	return string(b3.Bytes()), nil
+	return b3.Bytes(), nil
 }
 
-func (r *Grender) renderWithoutLayout(pageName string, data interface{}) (string, error) {
+func (r *Grender) renderWithoutLayout(pageName string, data interface{}) (Result, error) {
 	var b bytes.Buffer
 	pt := r.get(pageName, false)
 	if pt == nil {
-		return "", fmt.Errorf("no template %s", pageName)
+		return b.Bytes(), fmt.Errorf("no template %s", pageName)
 	}
 	if err := pt.Execute(&b, data); err != nil {
-		return "", err
+		return b.Bytes(), err
 	}
-	content := string(b.Bytes())
+	content := b.String()
 
 	// for shared Grender
 	// if we know how to detect any "share" function, we can ignore this step
 
 	temp, err := template.New("temp-template").Funcs(template.FuncMap{
 		"share": func(sharedTempleteName string) string {
-			return r.renderSharedWithData(sharedTempleteName, data)
+			return r.renderShared(sharedTempleteName, data).String()
 		},
 	}).Parse(content)
 	if err != nil {
-		return "", err
+		return Result(b.Bytes()), err
 	}
 
 	var bt bytes.Buffer
 	if err := temp.Execute(&bt, data); err != nil {
-		return "", err
+		return bt.Bytes(), err
 	}
-	return string(bt.Bytes()), nil
+	return Result(bt.Bytes()), nil
 }
 
-func (r *Grender) renderSharedWithData(sharedTemplateName string, data interface{}) string {
+func (r *Grender) renderShared(sharedTemplateName string, data interface{}) Result {
 	shared := r.get(sharedTemplateName, false)
 	if shared == nil {
 		panic(fmt.Errorf("no shared template %s", sharedTemplateName))
@@ -87,5 +100,5 @@ func (r *Grender) renderSharedWithData(sharedTemplateName string, data interface
 	if err := shared.Execute(&b, data); err != nil {
 		panic(err)
 	}
-	return string(b.Bytes())
+	return Result(b.Bytes())
 }
